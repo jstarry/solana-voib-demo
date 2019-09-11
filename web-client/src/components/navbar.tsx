@@ -1,6 +1,12 @@
 import React, {FunctionComponent} from 'react';
-import {AppBar, Grid, Switch, Toolbar, Typography} from '@material-ui/core';
-import {makeStyles} from '@material-ui/styles';
+import {
+  AppBar,
+  Grid,
+  Switch,
+  Toolbar,
+  Typography,
+  makeStyles,
+} from '@material-ui/core';
 
 const useStyles = makeStyles({
   root: {
@@ -28,11 +34,11 @@ const Navbar: FunctionComponent<Props> = ({broadcastMode, onModeToggle}) => {
           </Typography>
           <Typography component="div">
             <Grid component="label" container alignItems="center" spacing={1}>
-              <Grid item>Stream</Grid>
+              <Grid item>Consume</Grid>
               <Grid item>
                 <Switch checked={broadcastMode} onChange={onModeToggle} />
               </Grid>
-              <Grid item>Broadcast</Grid>
+              <Grid item>Produce</Grid>
             </Grid>
           </Typography>
         </Toolbar>

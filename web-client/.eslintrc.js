@@ -67,6 +67,7 @@ module.exports = {
     'prettier/prettier': 'error',
     'require-await': ['error'],
     semi: ['error', 'always'],
+    '@typescript-eslint/no-explicit-any': 0,
   },
   settings: {
     react: {

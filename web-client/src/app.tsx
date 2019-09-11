@@ -1,15 +1,33 @@
-import React, {FunctionComponent} from 'react';
+import React, {useEffect, useState, FunctionComponent} from 'react';
 import ReactDOM from 'react-dom';
 import {withRouter, HashRouter, RouteComponentProps} from 'react-router-dom';
-import {ThemeProvider} from '@material-ui/styles';
+import {MuiThemeProvider as ThemeProvider} from '@material-ui/core';
 
 import theme from './theme';
-import Streamer from './streamer';
+import Broadcast from './broadcast';
+import Stream from './stream';
 import Navbar from './components/navbar';
+import WebRtcServer from './webrtc';
 
 const App: FunctionComponent<RouteComponentProps<{}>> = props => {
+  const [webRtc, setWebRtc] = useState(null);
+
+  useEffect(() => {
+    const webRtc = new WebRtcServer((): void => {
+      setWebRtc(webRtc);
+    });
+  }, []);
+
   const broadcastMode = props.location.pathname === '/';
-  const renderPage = broadcastMode ? <Streamer /> : null;
+  const renderPage = (): any => {
+    if (!webRtc) return null;
+    return broadcastMode ? (
+      <Broadcast webRtc={webRtc} />
+    ) : (
+      <Stream webRtc={webRtc} />
+    );
+  };
+
   const handleToggle = (): void => {
     if (broadcastMode) {
       props.history.replace('/stream');
@@ -21,7 +39,7 @@ const App: FunctionComponent<RouteComponentProps<{}>> = props => {
   return (
     <>
       <Navbar broadcastMode={broadcastMode} onModeToggle={handleToggle} />
-      {renderPage}
+      {renderPage()}
     </>
   );
 };
