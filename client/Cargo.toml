@@ -11,6 +11,6 @@ log = "0.4.6"
 serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"
-solana-client = { git = "https://github.com/solana-labs/solana" }
-solana-drone = { git = "https://github.com/solana-labs/solana" }
-solana-sdk = { git = "https://github.com/solana-labs/solana" }
+solana-client = { git = "https://github.com/solana-labs/solana", version = "0.19.0-pre0" }
+solana-drone = { git = "https://github.com/solana-labs/solana", version = "0.19.0-pre0" }
+solana-sdk = { git = "https://github.com/solana-labs/solana", version = "0.19.0-pre0" }
