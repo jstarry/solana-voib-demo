@@ -1,4 +1,5 @@
 keypair = "path/to/device/id.json"
+program_id = "path/to/program_id.json"
 gatekeeper_pubkey = "path/to/gatekeeper-pubkey.json"
 provider_pubkey = "path/to/provider-pubkey.json"
 fullnode = "fullnodeAddress"  # Can be an IPv4, IPv6, or a web address

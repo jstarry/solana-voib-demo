@@ -1,13 +1,24 @@
-pub mod bandwidth_prepay_instruction;
-pub mod bandwidth_prepay_processor;
-pub mod bandwidth_prepay_state;
+mod data;
+mod instruction;
 
-const BANDWIDTH_PREPAY_PROGRAM_ID: [u8; 32] = [
-    128, 128, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0,
-];
+pub use data::*;
+pub use instruction::*;
 
-solana_sdk::solana_name_id!(
-    BANDWIDTH_PREPAY_PROGRAM_ID,
-    "9ecPa9EqqwcjzPTCNLisYaGskkc3j5b12xdcBZNP7sxK"
-);
+#[repr(u8)]
+#[derive(Copy, Clone, PartialEq)]
+#[cfg_attr(test, derive(Debug))]
+pub enum AccountType {
+    Unset,
+    Contract,
+    Invalid,
+}
+
+impl From<u8> for AccountType {
+    fn from(value: u8) -> Self {
+        match value {
+            0 => AccountType::Unset,
+            1 => AccountType::Contract,
+            _ => AccountType::Invalid,
+        }
+    }
+}

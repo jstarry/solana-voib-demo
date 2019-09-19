@@ -2,7 +2,7 @@ use crate::accumulator::Accumulator;
 use crate::business_logic::business_logic;
 use crate::connection_params::NewConnParams;
 use crate::contract::*;
-use bandwidth_prepay_api::bandwidth_prepay_state::BandwidthPrepayState;
+use bandwidth_prepay_api::ContractData;
 use log::*;
 use mio::net::TcpStream;
 use mio::unix::UnixReady;
@@ -12,6 +12,7 @@ use pubsub_client::request::PubSubRequest;
 use serde_json::Value;
 use solana_sdk::account::Account;
 use solana_sdk::client::Client;
+use solana_sdk::pubkey::Pubkey;
 use solana_sdk::signature::{Keypair, KeypairUtil};
 use solana_sdk::transaction::Transaction;
 use std::io::ErrorKind;
@@ -29,7 +30,8 @@ pub fn forwarder<T>(
     params: &NewConnParams,
     gatekeeper: &Keypair,
     client: &Arc<T>,
-    contract_state: &BandwidthPrepayState,
+    program_id: &Pubkey,
+    contract_data: &ContractData,
     starting_balance: u64,
     ws_addr: SocketAddr,
     sender: Sender<u16>,
@@ -100,7 +102,8 @@ pub fn forwarder<T>(
                                     params,
                                     gatekeeper,
                                     client,
-                                    contract_state,
+                                    program_id,
+                                    contract_data,
                                     &mut accumulator,
                                     &pubsub_thread.receiver,
                                     data_amount as u64,
@@ -126,7 +129,8 @@ pub fn forwarder<T>(
                                 params,
                                 gatekeeper,
                                 client,
-                                contract_state,
+                                program_id,
+                                contract_data,
                                 &mut accumulator,
                                 &pubsub_thread.receiver,
                                 data_amount as u64,
@@ -148,18 +152,19 @@ pub fn forwarder<T>(
             }
         }
     }
-    if let Ok((_, contract_state)) = check_contract(params, client, &gatekeeper.pubkey()) {
+    if let Ok((_, contract_data)) = check_contract(params, client, &gatekeeper.pubkey()) {
         if accumulator.amount_charged > 0 {
             charge_contract(
                 params,
                 client,
-                &contract_state,
+                program_id,
+                &contract_data,
                 gatekeeper,
                 accumulator.amount_charged,
             )
             .unwrap();
         }
-        refund(params, client, &contract_state, gatekeeper).unwrap();
+        refund(params, client, program_id, &contract_data, gatekeeper).unwrap();
     }
 
     info!(
@@ -175,7 +180,8 @@ pub fn process_data<T: Client>(
     params: &NewConnParams,
     gatekeeper: &Keypair,
     client: &Arc<T>,
-    contract_state: &BandwidthPrepayState,
+    program_id: &Pubkey,
+    contract_data: &ContractData,
     accumulator: &mut Accumulator,
     pubsub_receiver: &Receiver<Event>,
     data_amount: u64,
@@ -212,9 +218,10 @@ pub fn process_data<T: Client>(
             );
             let transaction = build_and_sign_spend_transaction(
                 client,
+                program_id,
                 gatekeeper,
                 &params.contract_pubkey,
-                &contract_state.provider_id,
+                &contract_data.provider_id,
                 accumulator.amount_charged,
             );
             let client = client.clone();
@@ -235,13 +242,14 @@ pub fn process_data<T: Client>(
         charge_contract(
             params,
             client,
-            contract_state,
+            program_id,
+            contract_data,
             gatekeeper,
             accumulator.amount_charged,
         )
         .unwrap();
         if accumulator.initiator_fund - accumulator.amount_charged > 0 {
-            refund(params, client, contract_state, gatekeeper).unwrap();
+            refund(params, client, program_id, contract_data, gatekeeper).unwrap();
         }
         true
     }

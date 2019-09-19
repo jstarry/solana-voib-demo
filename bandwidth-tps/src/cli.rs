@@ -14,6 +14,7 @@ pub struct Config {
     pub fee_interval: u16,
     pub lamports: u64,
     pub provider: Pubkey,
+    pub program_id: Pubkey,
 }
 
 impl Default for Config {
@@ -28,6 +29,7 @@ impl Default for Config {
             fee_interval: 1000,
             lamports: 100_000,
             provider: Pubkey::new_rand(),
+            program_id: Pubkey::new_rand(),
         }
     }
 }
@@ -86,6 +88,14 @@ pub fn build_args<'a, 'b>() -> App<'a, 'b> {
                 .required(true)
                 .help("/path/to/provider/pubkey.json"),
         )
+        .arg(
+            Arg::with_name("program_id")
+                .long("program_id")
+                .value_name("PATH")
+                .takes_value(true)
+                .required(true)
+                .help("/path/to/program_id.json"),
+        )
 }
 
 /// Parses a clap `ArgMatches` structure into a `Config`
@@ -118,10 +128,10 @@ pub fn extract_args<'a>(matches: &ArgMatches<'a>) -> Config {
         args.lamports = num.to_string().parse().expect("can't parse lamports");
     }
 
-    if matches.is_present("provider") {
-        args.provider =
-            read_pubkey(matches.value_of("provider").unwrap()).expect("can't read provider pubkey");
-    }
+    args.provider =
+        read_pubkey(matches.value_of("provider").unwrap()).expect("can't read provider pubkey");
+    args.program_id =
+        read_pubkey(matches.value_of("program_idk").unwrap()).expect("can't read program id");
 
     args
 }

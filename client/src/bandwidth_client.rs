@@ -1,4 +1,3 @@
-use bandwidth_prepay_api::bandwidth_prepay_instruction;
 use log::{error, info};
 use serde_derive::Deserialize;
 use serde_json::json;
@@ -61,6 +60,7 @@ impl BandwidthClient {
     pub fn initialize_contract(
         &self,
         lamports: u64,
+        program_id: &Pubkey,
         gatekeeper_pubkey: &Pubkey,
         provider_pubkey: &Pubkey,
     ) -> Keypair {
@@ -70,7 +70,8 @@ impl BandwidthClient {
             .get_recent_blockhash()
             .unwrap_or_default();
 
-        let instructions = bandwidth_prepay_instruction::initialize(
+        let instructions = bandwidth_prepay_api::initialize(
+            &program_id,
             &self.id.pubkey(),
             &prepay_account.pubkey(),
             &gatekeeper_pubkey,

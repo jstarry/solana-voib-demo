@@ -40,6 +40,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .help("/path/to/provider/pubkey.json"),
         )
         .arg(
+            Arg::with_name("program_id")
+                .long("program_id")
+                .value_name("PATH")
+                .takes_value(true)
+                .required(true)
+                .help("/path/to/program_id.json"),
+        )
+        .arg(
             Arg::with_name("fullnode")
                 .short("f")
                 .long("fullnode")
@@ -94,6 +102,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client_account = read_keypair(matches.value_of("keypair").unwrap())?;
     let gatekeeper_pubkey = read_pubkey(matches.value_of("gatekeeper_pubkey").unwrap())?;
     let provider_pubkey = read_pubkey(matches.value_of("provider").unwrap())?;
+    let program_id = read_pubkey(matches.value_of("program_id").unwrap())?;
 
     // Set up Solana bandwidth prepayment contract
     let host = matches
@@ -121,7 +130,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let drone_addr = SocketAddr::new(host, DEFAULT_DRONE_PORT);
     client.request_airdrop(&drone_addr, lamports + 1)?;
-    let prepay_account = client.initialize_contract(lamports, &gatekeeper_pubkey, &provider_pubkey);
+    let prepay_account =
+        client.initialize_contract(lamports, &program_id, &gatekeeper_pubkey, &provider_pubkey);
 
     let gatekeeper_addr = matches.value_of("gatekeeper_addr").unwrap();
     let destination = matches.value_of("destination").unwrap();

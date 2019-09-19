@@ -1,12 +1,18 @@
-#[macro_export]
-macro_rules! bandwidth_prepay_program {
-    () => {
-        (
-            "bandwidth_prepay_program".to_string(),
-            bandwidth_prepay_api::id(),
-        )
-    };
-}
+#![allow(unreachable_code)]
 
-use bandwidth_prepay_api::bandwidth_prepay_processor::process_instruction;
-solana_sdk::solana_entrypoint!(process_instruction);
+mod processor;
+mod result;
+mod util;
+
+use solana_sdk::{account_info::AccountInfo, entrypoint, entrypoint::SUCCESS, pubkey::Pubkey};
+
+entrypoint!(_entrypoint);
+fn _entrypoint(program_id: &Pubkey, accounts: &mut [AccountInfo], data: &[u8]) -> u32 {
+    match processor::process_instruction(program_id, accounts, data) {
+        Err(err) => {
+            err.print();
+            err as u32
+        }
+        _ => SUCCESS,
+    }
+}

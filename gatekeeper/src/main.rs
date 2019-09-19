@@ -12,6 +12,7 @@ use solana_client::rpc_request::RpcRequest;
 use solana_client::thin_client::create_client;
 use solana_drone::drone::request_airdrop_transaction;
 use solana_sdk::client::{AsyncClient, SyncClient};
+use solana_sdk::pubkey::read_pubkey;
 use solana_sdk::signature::{read_keypair, KeypairUtil};
 use std::net::SocketAddr;
 use std::sync::mpsc::channel;
@@ -29,6 +30,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .takes_value(true)
                 .required(true)
                 .help("/path/to/id.json"),
+        )
+        .arg(
+            Arg::with_name("program_id")
+                .long("program_id")
+                .value_name("PATH")
+                .takes_value(true)
+                .required(true)
+                .help("/path/to/program_id.json"),
         )
         .arg(
             Arg::with_name("fullnode")
@@ -55,9 +64,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .help("How often to charge contract"),
         )
         .get_matches();
+
     let gatekeeper_keypair_path = matches.value_of("keypair").unwrap().to_string();
     let gatekeeper = read_keypair(&gatekeeper_keypair_path).unwrap();
     info!("Gatekeeper Pubkey: {:?}", gatekeeper.pubkey());
+
+    let program_id_path = matches.value_of("program_id").unwrap().to_string();
+    let program_id = read_pubkey(&program_id_path).unwrap();
+    info!("Program Id: {:?}", program_id);
 
     let fullnode = matches
         .value_of("fullnode")
@@ -159,6 +173,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 &parsed_params,
                 &gatekeeper,
                 &client,
+                &program_id,
                 &contract_state,
                 balance,
                 ws_addr,

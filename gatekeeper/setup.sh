@@ -14,5 +14,5 @@ fi
 
 set -ex
 
-cargo run --manifest-path ../solana/keygen/Cargo.toml new -o "$CONFIG_PATH"/"$NAME"-id.json
-cargo run --manifest-path ../solana/keygen/Cargo.toml pubkey "$CONFIG_PATH"/"$NAME"-id.json -o "$CONFIG_PATH"/"$NAME"-pubkey.json
+solana-keygen new -o "$CONFIG_PATH"/"$NAME"-id.json
+solana-keygen pubkey "$CONFIG_PATH"/"$NAME"-id.json -o "$CONFIG_PATH"/"$NAME"-pubkey.json

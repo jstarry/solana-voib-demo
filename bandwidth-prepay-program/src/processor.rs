@@ -1,89 +1,107 @@
-use crate::bandwidth_prepay_instruction::BandwidthPrepayInstruction;
-use crate::bandwidth_prepay_state::{BandwidthPrepayError, BandwidthPrepayState};
-use bincode::deserialize;
-use solana_sdk::account::KeyedAccount;
-use solana_sdk::instruction::InstructionError;
-use solana_sdk::pubkey::Pubkey;
+use crate::result::{ProgramError, ProgramResult};
+use crate::util::{
+    expect_account_type, expect_key, expect_min_size, expect_n_accounts, expect_new_account,
+    expect_owned_by, expect_signed,
+};
+use arrayref::array_ref;
+use bandwidth_prepay_api::{BandwidthPrepayInstruction, ContractData, CONTRACT_SIZE, AccountType};
+use solana_sdk::{account_info::AccountInfo, info, pubkey::Pubkey};
+use std::convert::TryFrom;
 
-fn initialize_account(keyed_accounts: &mut [KeyedAccount]) -> Result<(), BandwidthPrepayError> {
-    if let Ok(state) = BandwidthPrepayState::deserialize(&keyed_accounts[1].account.data) {
-        if state != BandwidthPrepayState::default() {
-            Err(BandwidthPrepayError::AlreadyInitialized)?
-        }
-    }
-    let state = BandwidthPrepayState {
-        initiator_id: *keyed_accounts[0].signer_key().unwrap(),
-        gatekeeper_id: *keyed_accounts[2].unsigned_key(),
-        provider_id: *keyed_accounts[3].unsigned_key(),
-    };
-    state.serialize(&mut keyed_accounts[1].account.data)
+fn initialize_account(program_id: &Pubkey, accounts: &mut [AccountInfo]) -> ProgramResult {
+    info!("initialize account");
+    expect_n_accounts(accounts, 4)?;
+
+    let (initiator_account, accounts) = accounts.split_first_mut().unwrap();
+    expect_signed(initiator_account)?;
+
+    let (contract_account, accounts) = accounts.split_first_mut().unwrap();
+    expect_owned_by(contract_account, program_id)?;
+    expect_min_size(contract_account.data, CONTRACT_SIZE)?;
+    expect_new_account(contract_account)?;
+
+    let (gatekeeper_account, accounts) = accounts.split_first_mut().unwrap();
+    let (provider_account, _) = accounts.split_first_mut().unwrap();
+
+    ContractData::copy_to_bytes(
+        contract_account.data,
+        initiator_account.key,
+        gatekeeper_account.key,
+        provider_account.key,
+    );
+    Ok(())
 }
 
-fn spend(keyed_accounts: &mut [KeyedAccount], amount: u64) -> Result<(), BandwidthPrepayError> {
-    let gatekeeper_account_index = 0;
-    let contract_account_index = 1;
-    let provider_account_index = 2;
-    let state =
-        BandwidthPrepayState::deserialize(&keyed_accounts[contract_account_index].account.data)?;
+fn spend(program_id: &Pubkey, accounts: &mut [AccountInfo], data: &[u8]) -> ProgramResult {
+    info!("spend");
+    expect_n_accounts(accounts, 3)?;
 
-    if let Some(gatekeeper_pubkey) = keyed_accounts[gatekeeper_account_index].signer_key() {
-        if gatekeeper_pubkey != &state.gatekeeper_id {
-            Err(BandwidthPrepayError::NoGatekeeperAccount)?
-        }
-    } else {
-        Err(BandwidthPrepayError::NotSignedByGatekeeper)?
+    let (gatekeeper_account, accounts) = accounts.split_first_mut().unwrap();
+    expect_signed(gatekeeper_account)?;
+
+    let (contract_account, accounts) = accounts.split_first_mut().unwrap();
+    expect_owned_by(contract_account, program_id)?;
+    expect_account_type(contract_account, AccountType::Contract)?;
+
+    let (provider_account, _) = accounts.split_first_mut().unwrap();
+
+    let contract_data =
+        ContractData::from_bytes(contract_account.data).map_err(|_| ProgramError::InvalidInput)?;
+    expect_key(gatekeeper_account, &contract_data.gatekeeper_id)?;
+    expect_key(provider_account, &contract_data.provider_id)?;
+
+    if data.len() != 8 {
+        return Err(ProgramError::InvalidSpendData);
     }
-    if keyed_accounts[provider_account_index].unsigned_key() != &state.provider_id {
-        Err(BandwidthPrepayError::NoProviderAccount)?
-    }
-    if keyed_accounts[contract_account_index].account.lamports < amount {
-        Err(BandwidthPrepayError::BalanceTooLow)?
+    let amount = u64::from_le_bytes(*array_ref!(data, 0, 8));
+    if *contract_account.lamports < amount {
+        Err(ProgramError::BalanceTooLow)?
     }
 
-    keyed_accounts[contract_account_index].account.lamports -= amount;
-    keyed_accounts[provider_account_index].account.lamports += amount;
+    *contract_account.lamports -= amount;
+    *provider_account.lamports += amount;
 
     Ok(())
 }
 
-fn refund(keyed_accounts: &mut [KeyedAccount]) -> Result<(), BandwidthPrepayError> {
-    let gatekeeper_account_index = 0;
-    let contract_account_index = 1;
-    let initiator_account_index = 2;
-    let state =
-        BandwidthPrepayState::deserialize(&keyed_accounts[contract_account_index].account.data)?;
+fn refund(program_id: &Pubkey, accounts: &mut [AccountInfo]) -> ProgramResult {
+    info!("refund");
+    expect_n_accounts(accounts, 3)?;
 
-    if let Some(gatekeeper_pubkey) = keyed_accounts[gatekeeper_account_index].signer_key() {
-        if gatekeeper_pubkey != &state.gatekeeper_id {
-            Err(BandwidthPrepayError::NoGatekeeperAccount)?
-        }
-    } else {
-        Err(BandwidthPrepayError::NotSignedByGatekeeper)?
-    }
-    if keyed_accounts[initiator_account_index].unsigned_key() != &state.initiator_id {
-        Err(BandwidthPrepayError::NoInitiatorAccount)?
-    }
+    let (gatekeeper_account, accounts) = accounts.split_first_mut().unwrap();
+    expect_signed(gatekeeper_account)?;
 
-    keyed_accounts[initiator_account_index].account.lamports +=
-        keyed_accounts[contract_account_index].account.lamports;
-    keyed_accounts[contract_account_index].account.lamports = 0;
+    let (contract_account, accounts) = accounts.split_first_mut().unwrap();
+    expect_owned_by(contract_account, program_id)?;
+    expect_account_type(contract_account, AccountType::Contract)?;
+
+    let (initiator_account, _) = accounts.split_first_mut().unwrap();
+
+    let contract_data =
+        ContractData::from_bytes(contract_account.data).map_err(|_| ProgramError::InvalidInput)?;
+    expect_key(gatekeeper_account, &contract_data.gatekeeper_id)?;
+    expect_key(initiator_account, &contract_data.initiator_id)?;
+
+    *initiator_account.lamports += *contract_account.lamports;
+    *contract_account.lamports = 0;
 
     Ok(())
 }
 
 pub fn process_instruction(
-    _program_id: &Pubkey,
-    keyed_accounts: &mut [KeyedAccount],
+    program_id: &Pubkey,
+    accounts: &mut [AccountInfo],
     data: &[u8],
-) -> Result<(), InstructionError> {
-    let instruction = deserialize(data).map_err(|_| InstructionError::InvalidInstructionData)?;
+) -> ProgramResult {
+    let (instruction, data) = data.split_at(1);
+    let instruction = BandwidthPrepayInstruction::try_from(instruction[0].to_le())
+        .map_err(|_| ProgramError::InvalidCommand)?;
 
     match instruction {
-        BandwidthPrepayInstruction::InitializeAccount => initialize_account(keyed_accounts),
-        BandwidthPrepayInstruction::Spend(amount) => spend(keyed_accounts, amount),
-        BandwidthPrepayInstruction::Refund => refund(keyed_accounts),
+        BandwidthPrepayInstruction::InitializeAccount => initialize_account(program_id, accounts),
+        BandwidthPrepayInstruction::Spend => spend(program_id, accounts, data),
+        BandwidthPrepayInstruction::Refund => refund(program_id, accounts),
     }
-    .map_err(|e| InstructionError::CustomError(e as u32))
 }
 
 #[cfg(test)]

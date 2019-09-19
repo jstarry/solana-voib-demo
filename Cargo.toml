@@ -1,6 +1,5 @@
 [workspace]
 members = [
-  "bandwidth-prepay-program",
   "bandwidth-prepay-api",
   "bandwidth-tps",
   "client",
@@ -9,4 +8,7 @@ members = [
   "provider-drone",
   "tcp-echo-server",
   "stream-video",
+]
+exclude = [
+  "bandwidth-prepay-program",
 ]

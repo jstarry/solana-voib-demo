@@ -77,25 +77,26 @@ project directory on the Pis.
 
 ### Deploying the bandwidth prepay program
 
-This repository depends on a [Solana](https://github.com/solana-labs/solana)
-cluster, currently synced to v0.18.0. On the machine that will run the solana
-cluster, navigate to `solana-voib-demo` root and clone `solana` with the command:
-
-```shell
-$ git clone --branch v0.18.0 https://github.com/solana-labs/solana.git
-```
-
-Then build solana:
-
-```shell
-$ cd solana && cargo build --all
-```
-
 Deploy the bandwidth-prepay program:
 
+1. Install BPF SDK
 ```shell
-$ cd bandwidth-prepay-program
-$ ./deploy.sh
+npm install
+```
+
+2. Build BPF Program
+```shell
+npm run build:program
+```
+
+3. Deploy Program
+```shell
+npm run deploy:program
+```
+
+4. Verify program_id.json was written
+```shell
+cat dist/program_id.json
 ```
 
 ### Setting up keypairs
@@ -152,6 +153,12 @@ See the [Solana Book](https://solana-labs.github.io/book/getting-started.html)
 for instructions on how to start a testnet from the `solana` repo. You can use
 either a single-node or multi-node testnet.
 
+The easiest way to get up and running is to run:
+
+```shell
+npm run localnet:up
+```
+
 ### Starting the provider drone
 
 The provider drone distributes lamports from the provider's account to clients
@@ -173,7 +180,7 @@ RUST_LOG=provider_drone=info,solana_drone::drone=info
 In a new shell, navigate to the `gatekeeper` directory and run
 
 ```shell
-$ cargo run --bin gatekeeper -- -k config-local/gatekeeper-id.json
+$ cargo run --bin gatekeeper -- -k config-local/gatekeeper-id.json --program_id ../dist/program_id.json
 ```
 This will listen on the default port of 8122.
 
@@ -256,12 +263,12 @@ following:
 
 1. Running the cross-compiled version
 ```shell
-$ ../target/xc/stream_cli connect -g </path/to/gatekeeper-pubkey.json> -v </path/to/provider-pubkey.json> -k </path/to/id.json> -G <GATEKEEPER_ADDRESS:PORT> -f <FULLNODE_ADDRESS> -l <NUMBER> -d <DESTINATION_ADDRESS:PORT>
+$ ../target/xc/stream_cli connect -g </path/to/gatekeeper-pubkey.json> -v </path/to/provider-pubkey.json> -k </path/to/id.json> -G <GATEKEEPER_ADDRESS:PORT> -f <FULLNODE_ADDRESS> -l <NUMBER> -d <DESTINATION_ADDRESS:PORT> --program_id </path/to/program_id.json>
 ```
 
 2. Running a locally compiled version
 ```shell
-$ cargo run --bin stream_cli -- connect -g </path/to/gatekeeper-pubkey.json> -v </path/to/provider-pubkey.json> -k </path/to/id.json> -G <GATEKEEPER_ADDRESS:PORT> -f <FULLNODE_ADDRESS> -l <NUMBER> -d <DESTINATION_ADDRESS:PORT>
+$ cargo run --bin stream_cli -- connect -g </path/to/gatekeeper-pubkey.json> -v </path/to/provider-pubkey.json> -k </path/to/id.json> -G <GATEKEEPER_ADDRESS:PORT> -f <FULLNODE_ADDRESS> -l <NUMBER> -d <DESTINATION_ADDRESS:PORT> --program_id </path/to/program_id.json>
 ```
 where `<FULLNODE_ADDRESS>` is the IP address of a node in the solana cluster,
 `<NUMBER>` is the number of tokens to prepay into the contract, and
@@ -293,6 +300,5 @@ You can optionally observe changes to the provider account's balance by
 navigating to the `gatekeeper` directory and running
 
 ```shell
-$ cargo run --bin provider-account -- -f <FULLNODE ADDRESS> -p </path/to/provider-pubkey.json>
-```
+$ cargo run --bin provider-account -- -f <FULLNODE ADDRESS> -p </path/to/provider-pubkey.json> --program_id </path/to/program_id.json>```
 where `<FULLNODE_ADDRESS>` is the IP address of a node in the solana cluster.

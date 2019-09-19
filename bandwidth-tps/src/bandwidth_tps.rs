@@ -1,6 +1,5 @@
 use crate::cli::Config;
 use crate::gen_keys::GenKeys;
-use bandwidth_prepay_api::bandwidth_prepay_instruction;
 use gatekeeper::accumulator::Accumulator;
 use gatekeeper::connection_params::NewConnParams;
 use gatekeeper::contract::{check_contract, submit_transaction_loop};
@@ -48,6 +47,7 @@ where
             let gatekeeper_index = (i + 1) % num_gateways as usize;
             let gatekeeper = gatekeeper_keypairs[gatekeeper_index].clone();
             let client_keypairs = client_keypairs.clone();
+            let program_id = config.program_id.clone();
             let refund_lamports = config.lamports / 5;
             Builder::new()
                 .name("gatekeeper".to_string())
@@ -84,6 +84,7 @@ where
                             &params,
                             &gatekeeper,
                             &client,
+                            &program_id,
                             &contract_state,
                             &mut accumulator,
                             &pubsub_thread.receiver,
@@ -143,6 +144,7 @@ fn fund_contract<T: Client>(
 pub fn initialize_contracts<T: Client>(
     client: &T,
     client_keypairs: &[Keypair],
+    program_id: &Pubkey,
     lamports: u64,
     provider: &Pubkey,
     gatekeeper_keypairs: &[Keypair],
@@ -152,7 +154,8 @@ pub fn initialize_contracts<T: Client>(
     for (i, keypair) in client_keypairs.iter().enumerate() {
         let gatekeeper_index = (i + 1) % gatekeeper_keypairs.len();
         let contract_pubkey = Pubkey::new_rand();
-        let instructions = bandwidth_prepay_instruction::initialize(
+        let instructions = bandwidth_prepay_api::initialize(
+            &program_id,
             &keypair.pubkey(),
             &contract_pubkey,
             &gatekeeper_keypairs[gatekeeper_index].pubkey(),
@@ -193,26 +196,32 @@ pub fn generate_keypairs(num: u64) -> Vec<Keypair> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use bandwidth_prepay_api::bandwidth_prepay_processor::process_instruction;
-    use bandwidth_prepay_api::bandwidth_prepay_state::BandwidthPrepayState;
-    use bandwidth_prepay_api::id;
+    use bandwidth_prepay_api::ContractData;
     use solana_runtime::bank::Bank;
     use solana_runtime::bank_client::BankClient;
+    use solana_runtime::loader_utils::load_program;
+    use solana_runtime::genesis_utils::{create_genesis_block, GenesisBlockInfo};
+    use solana_sdk::bpf_loader;
     use solana_sdk::client::SyncClient;
-    use solana_sdk::genesis_block::create_genesis_block;
     use solana_sdk::system_instruction;
+    use solana_sdk::signature::{Keypair, KeypairUtil};
+    use std::vec::Vec;
+    use std::io::Read;
+    use std::fs::File;
 
-    fn create_bank(lamports: u64) -> (Bank, Keypair) {
-        let (genesis_block, mint_keypair) = create_genesis_block(lamports);
-        let mut bank = Bank::new(&genesis_block);
-        bank.add_instruction_processor(id(), process_instruction);
-        (bank, mint_keypair)
+    fn create_bank(lamports: u64) -> (BankClient, Pubkey, Keypair) {
+        let GenesisBlockInfo { genesis_block, mint_keypair, .. } = create_genesis_block(lamports);
+        let bank_client = BankClient::new(Bank::new(&genesis_block));
+        let mut program_file = File::open("../dist/programs/bandwidth_prepay.so").expect("program should exist");
+        let mut program_bytes = Vec::new();
+        program_file.read_to_end(&mut program_bytes).unwrap();
+        let program_id = load_program(&bank_client, &mint_keypair, &bpf_loader::id(), program_bytes);
+        (bank_client, program_id, mint_keypair)
     }
 
     #[test]
     fn test_initialize_contract() {
-        let (bank, alice_keypair) = create_bank(10_000);
-        let bank_client = BankClient::new(bank);
+        let (bank_client, program_id, alice_keypair) = create_bank(10_000);
         // TODO: Multiples don't currently work due to AccountInUse errors during bank processing
         // Update test when fixed
         let client_keypairs = vec![Keypair::new()];
@@ -242,6 +251,7 @@ mod tests {
         let (contract, _signature) = initialize_contracts(
             &bank_client,
             &client_keypairs,
+            &program_id,
             90,
             &provider,
             &gatekeeper_keypairs,
@@ -253,16 +263,15 @@ mod tests {
         }
         assert_eq!(balance, 90);
         let account_data = bank_client.get_account_data(&contract).unwrap().unwrap();
-        let state = BandwidthPrepayState::deserialize(&account_data).unwrap();
-        assert_eq!(state.gatekeeper_id, gatekeeper_keypairs[0].pubkey());
-        assert_eq!(state.provider_id, provider);
-        assert_eq!(state.initiator_id, client_keypairs[0].pubkey());
+        let data = ContractData::from_bytes(&account_data).unwrap();
+        assert_eq!(data.gatekeeper_id, gatekeeper_keypairs[0].pubkey());
+        assert_eq!(data.provider_id, provider);
+        assert_eq!(data.initiator_id, client_keypairs[0].pubkey());
     }
 
     #[test]
     fn test_fund_keypairs() {
-        let (bank, alice_keypair) = create_bank(10_000);
-        let bank_client = BankClient::new(bank);
+        let (bank_client, _program_id, alice_keypair) = create_bank(10_000);
         // TODO: Multiples don't currently work due to AccountInUse errors during bank processing
         // Update test when fixed
         let keypairs = vec![Keypair::new()];

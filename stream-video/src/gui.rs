@@ -129,6 +129,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client_account = read_keypair(&config.keypair)?;
     let gatekeeper_pubkey = read_pubkey(&config.gatekeeper_pubkey)?;
     let provider_pubkey = read_pubkey(&config.provider_pubkey)?;
+    let program_id = read_pubkey(&config.program_id)?;
 
     let client_pubkey = client_account.pubkey();
 
@@ -338,6 +339,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     Ok(ConnecterCommand::StartConnection(addr, lamports)) => {
                         let prepay_account = client.initialize_contract(
                             lamports,
+                            &program_id,
                             &gatekeeper_pubkey,
                             &provider_pubkey,
                         );
@@ -442,8 +444,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     });
 
-    let uiapp = gtk::Application::new("org.solana.VideoDemo", gio::ApplicationFlags::FLAGS_NONE)
-        .expect("Application::new failed");
+    let uiapp = gtk::Application::new(
+        Some("org.solana.VideoDemo"),
+        gio::ApplicationFlags::FLAGS_NONE,
+    )
+    .expect("Application::new failed");
 
     uiapp.connect_activate(move |app| {
         let provider = gtk::CssProvider::new();
@@ -489,9 +494,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let sc_pix1 = pix1.scale_simple(CALL_BUTTON_SIZE, CALL_BUTTON_SIZE, gdk_pixbuf::InterpType::Bilinear);
         let sc_pix2 = pix2.scale_simple(CALL_BUTTON_SIZE, CALL_BUTTON_SIZE, gdk_pixbuf::InterpType::Bilinear);
 
-        let img0 = gtk::Image::new_from_pixbuf(&sc_pix0);
-        let img1 = gtk::Image::new_from_pixbuf(&sc_pix1);
-        let img2 = gtk::Image::new_from_pixbuf(&sc_pix2);
+        let img0 = gtk::Image::new_from_pixbuf(sc_pix0.as_ref());
+        let img1 = gtk::Image::new_from_pixbuf(sc_pix1.as_ref());
+        let img2 = gtk::Image::new_from_pixbuf(sc_pix2.as_ref());
 
         but0.set_image(Some(&img0));
         but1.set_image(Some(&img1));
@@ -769,6 +774,7 @@ struct Config {
     keypair: String,
     gatekeeper_pubkey: String,
     provider_pubkey: String,
+    program_id: String,
     fullnode: String,
     rpc_port: u16,
     pubsub_port: u16,

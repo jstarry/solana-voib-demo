@@ -62,6 +62,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let contracts = initialize_contracts(
         &client,
         &client_keypairs,
+        &config.program_id,
         config.lamports,
         &config.provider,
         &gatekeeper_keypairs,
