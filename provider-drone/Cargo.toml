@@ -9,8 +9,8 @@ clap = "2.33.0"
 client = { path = "../client", version = "0.2.0" }
 env_logger = "0.6.1"
 log = "0.4.6"
-solana-client = { git = "https://github.com/jstarry/solana", branch = "native-loader-fix" }
-solana-drone = { git = "https://github.com/jstarry/solana", branch = "native-loader-fix" }
-solana-sdk = { git = "https://github.com/jstarry/solana", branch = "native-loader-fix" }
+solana-client = { git = "https://github.com/solana-labs/solana" }
+solana-drone = { git = "https://github.com/solana-labs/solana" }
+solana-sdk = { git = "https://github.com/solana-labs/solana" }
 tokio = "0.1"
 tokio-codec = "0.1"

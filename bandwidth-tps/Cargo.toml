@@ -14,11 +14,14 @@ pubsub-client = { path = "../pubsub-client", version = "0.2.0" }
 rand = "0.6.5"
 rand_chacha = "0.1.1"
 rayon = "1.2.0"
-solana-bpf-loader-api = { git = "https://github.com/jstarry/solana", branch = "native-loader-fix" }
-solana-client = { git = "https://github.com/jstarry/solana", branch = "native-loader-fix" }
-solana-drone = { git = "https://github.com/jstarry/solana", branch = "native-loader-fix" }
-solana-logger = { git = "https://github.com/jstarry/solana", branch = "native-loader-fix" }
-solana-sdk = { git = "https://github.com/jstarry/solana", branch = "native-loader-fix" }
+solana-bpf-loader-api = { git = "https://github.com/solana-labs/solana" }
+solana-client = { git = "https://github.com/solana-labs/solana" }
+solana-drone = { git = "https://github.com/solana-labs/solana" }
+solana-logger = { git = "https://github.com/solana-labs/solana" }
+solana-sdk = { git = "https://github.com/solana-labs/solana" }
 
 [dev-dependencies]
-solana-runtime = { git = "https://github.com/jstarry/solana", branch = "native-loader-fix" }
+solana-runtime = { git = "https://github.com/solana-labs/solana" }
+# This hack works around https://github.com/solana-labs/solana/issues/5966 to
+# produce dylib deps without a hash in the filename
+solana-runtime-path = { path = "../../solana/runtime", package = "solana-runtime" }

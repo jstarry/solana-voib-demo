@@ -5,7 +5,7 @@ authors = ["Solana Maintainers <maintainers@solana.com>"]
 edition = "2018"
 
 [dependencies]
-solana-sdk = { git = "https://github.com/jstarry/solana", branch = "native-loader-fix", default-features = false }
+solana-sdk = { git = "https://github.com/solana-labs/solana", default-features = false }
 
 [lib]
 crate-type = ["lib"]
