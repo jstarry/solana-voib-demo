@@ -300,5 +300,12 @@ You can optionally observe changes to the provider account's balance by
 navigating to the `gatekeeper` directory and running
 
 ```shell
-$ cargo run --bin provider-account -- -f <FULLNODE ADDRESS> -p </path/to/provider-pubkey.json> --program_id </path/to/program_id.json>```
+$ cargo run --bin provider-account -- -f <FULLNODE ADDRESS> -p </path/to/provider-pubkey.json> --program_id </path/to/program_id.json>
+```
 where `<FULLNODE_ADDRESS>` is the IP address of a node in the solana cluster.
+
+### Running tests
+
+Tests rely on the solana runtime to test the BPF program. In order to link the
+bpf loader native program, the `solana` repo must be located in the same directory
+as this `solana-voib-demo` project.
