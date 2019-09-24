@@ -17,15 +17,12 @@ pubsub-client = { path = "../pubsub-client", version = "0.2.0" }
 serde = "1.0.91"
 serde_derive = "1.0.91"
 serde_json = "1.0.39"
-solana-client = { git = "https://github.com/solana-labs/solana", version = "0.19.0-pre0" }
-solana-drone = { git = "https://github.com/solana-labs/solana", version = "0.19.0-pre0" }
-solana-sdk = { git = "https://github.com/solana-labs/solana", version = "0.19.0-pre0" }
+solana-client = { git = "https://github.com/solana-labs/solana", version = "0.20.0" }
+solana-drone = { git = "https://github.com/solana-labs/solana", version = "0.20.0" }
+solana-sdk = { git = "https://github.com/solana-labs/solana", version = "0.20.0" }
 
 [dev-dependencies]
-solana-runtime = { git = "https://github.com/solana-labs/solana", version = "0.19.0-pre0" }
-# This hack works around https://github.com/solana-labs/solana/issues/5966 to
-# produce dylib deps without a hash in the filename
-solana-runtime-path = { path = "../../solana/runtime", version = "0.19.0-pre0", package = "solana-runtime" }
+solana-runtime = { git = "https://github.com/solana-labs/solana", version = "0.20.0" }
 
 [[bin]]
 name = "gatekeeper"

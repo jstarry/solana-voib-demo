@@ -200,9 +200,9 @@ mod tests {
     use solana_runtime::bank::Bank;
     use solana_runtime::bank_client::BankClient;
     use solana_runtime::loader_utils::load_program;
-    use solana_runtime::genesis_utils::{create_genesis_block, GenesisBlockInfo};
     use solana_sdk::bpf_loader;
     use solana_sdk::client::SyncClient;
+    use solana_sdk::genesis_block::create_genesis_block;
     use solana_sdk::system_instruction;
     use solana_sdk::signature::{Keypair, KeypairUtil};
     use std::vec::Vec;
@@ -210,12 +210,18 @@ mod tests {
     use std::fs::File;
 
     fn create_bank(lamports: u64) -> (BankClient, Pubkey, Keypair) {
-        let GenesisBlockInfo { genesis_block, mint_keypair, .. } = create_genesis_block(lamports);
-        let bank_client = BankClient::new(Bank::new(&genesis_block));
+        let (genesis_block, mint_keypair) = create_genesis_block(lamports);
+        let mut bank = Bank::new(&genesis_block);
+        bank.add_instruction_processor(
+            bpf_loader::id(),
+            solana_bpf_loader_api::process_instruction,
+        );
+        let bank_client = BankClient::new(bank);
         let mut program_file = File::open("../dist/programs/bandwidth_prepay.so").expect("program should exist");
         let mut program_bytes = Vec::new();
         program_file.read_to_end(&mut program_bytes).unwrap();
         let program_id = load_program(&bank_client, &mint_keypair, &bpf_loader::id(), program_bytes);
+
         (bank_client, program_id, mint_keypair)
     }
 

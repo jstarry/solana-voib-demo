@@ -10,7 +10,7 @@ edition = "2018"
 [dependencies]
 arrayref = "0.3.5"
 bandwidth-prepay-api = { path = "../bandwidth-prepay-api" }
-solana-sdk = { git = "https://github.com/solana-labs/solana", version = "0.19.0-pre0", default-features = false }
+solana-sdk = { git = "https://github.com/solana-labs/solana", version = "0.20.0", default-features = false }
 
 [features]
 program = ["solana-sdk/program"]

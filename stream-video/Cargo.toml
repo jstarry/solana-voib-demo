@@ -22,8 +22,8 @@ os_pipe = "0.8"
 provider-drone = { path = "../provider-drone", version = "0.2.0" }
 pubsub-client = { path = "../pubsub-client", version = "0.2.0" }
 serde_json = "1.0.39"
-solana-client = { git = "https://github.com/solana-labs/solana", version = "0.19.0-pre0" }
-solana-sdk = { git = "https://github.com/solana-labs/solana", version = "0.19.0-pre0" }
+solana-client = { git = "https://github.com/solana-labs/solana", version = "0.20.0" }
+solana-sdk = { git = "https://github.com/solana-labs/solana", version = "0.20.0" }
 serde = "1.0.91"
 serde_derive = "1.0.91"
 toml = "0.5"

@@ -75,9 +75,9 @@ project directory on the Pis.
 
 ## Setting up the video demo
 
-### Deploying the bandwidth prepay program
+You will first need to [install Node.js](https://nodejs.org/en/download/package-manager/)
 
-Deploy the bandwidth-prepay program:
+### Building the bandwidth prepay program
 
 1. Install BPF SDK
 ```shell
@@ -87,16 +87,6 @@ npm install
 2. Build BPF Program
 ```shell
 npm run build:program
-```
-
-3. Deploy Program
-```shell
-npm run deploy:program
-```
-
-4. Verify program_id.json was written
-```shell
-cat dist/program_id.json
 ```
 
 ### Setting up keypairs
@@ -156,6 +146,7 @@ either a single-node or multi-node testnet.
 The easiest way to get up and running is to run:
 
 ```shell
+npm run localnet:update
 npm run localnet:up
 ```
 
@@ -177,7 +168,13 @@ RUST_LOG=provider_drone=info,solana_drone::drone=info
 
 ### Starting the gatekeeper program
 
-In a new shell, navigate to the `gatekeeper` directory and run
+First, deploy the program to your local testnet
+
+```shell
+npm run deploy:program
+```
+
+Then, in a new shell, navigate to the `gatekeeper` directory and run
 
 ```shell
 $ cargo run --bin gatekeeper -- -k config-local/gatekeeper-id.json --program_id ../dist/program_id.json
@@ -303,9 +300,3 @@ navigating to the `gatekeeper` directory and running
 $ cargo run --bin provider-account -- -f <FULLNODE ADDRESS> -p </path/to/provider-pubkey.json> --program_id </path/to/program_id.json>
 ```
 where `<FULLNODE_ADDRESS>` is the IP address of a node in the solana cluster.
-
-### Running tests
-
-Tests rely on the solana runtime to test the BPF program. In order to link the
-bpf loader native program, the `solana` repo must be located in the same directory
-as this `solana-voib-demo` project.
