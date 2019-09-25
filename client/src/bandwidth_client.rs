@@ -35,6 +35,14 @@ impl BandwidthClient {
         }
     }
 
+    pub fn calculate_max_fee(&self) -> Result<u64, RpcError> {
+        let max_fee = self.fullnode_client.get_recent_blockhash().map_err(|err| {
+            info!("get_recent_blockhash failed: {:?}", err);
+            RpcError::RpcRequestError(err.to_string())
+        })?.1.max_lamports_per_signature;
+        Ok(max_fee)
+    }
+
     pub fn request_airdrop(&self, drone_addr: &SocketAddr, lamports: u64) -> Result<(), RpcError> {
         let (blockhash, _) = self.fullnode_client.get_recent_blockhash().map_err(|err| {
             info!("get_recent_blockhash failed: {:?}", err);

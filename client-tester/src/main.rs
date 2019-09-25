@@ -128,8 +128,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let fullnode_client = RpcClient::new_socket(rpc_addr);
     let client = BandwidthClient::new(client_account, fullnode_client);
 
+    let fee = client.calculate_max_fee()?;
+
     let drone_addr = SocketAddr::new(host, DEFAULT_DRONE_PORT);
-    client.request_airdrop(&drone_addr, lamports + 1)?;
+    client.request_airdrop(&drone_addr, lamports + 1 + (2 * fee))?;
     let prepay_account =
         client.initialize_contract(lamports, &program_id, &gatekeeper_pubkey, &provider_pubkey);
 
