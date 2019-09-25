@@ -22,7 +22,7 @@ import {Account, BpfLoader, Connection, PublicKey, testnetChannelEndpoint} from 
   const loaderAccount = new Account();
   const connection = new Connection(url);
   await connection.requestAirdrop(loaderAccount.publicKey, 100000);
-  await BpfLoader.load(connection, loaderAccount, elfData);
+  const programId = await BpfLoader.load(connection, loaderAccount, elfData);
 
   const idFile = path.join(distPath, 'program_id.json');
   const programId = loaderAccount.publicKey.toBase58();
