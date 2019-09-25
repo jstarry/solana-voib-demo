@@ -26,6 +26,6 @@ import {Account, BpfLoader, Connection, PublicKey, testnetChannelEndpoint} from 
 
   const idFile = path.join(distPath, 'program_id.json');
   const programId = loaderAccount.publicKey.toBase58();
-  await fs.writeFile(idFile, JSON.stringify(programId), 'utf8');
+  await fs.writeFile(idFile, JSON.stringify(programId.toBase58()), 'utf8');
   console.log(`Saved program id to ${idFile}`);
 })()
